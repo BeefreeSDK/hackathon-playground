@@ -257,10 +257,12 @@ function App() {
         <div className="header-left">
           <div className="beefree-logo">
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M16 0C24.8366 0 32 7.16344 32 16C32 24.8366 24.8366 32 16 32C7.16344 32 0 24.8366 0 16C0 7.16344 7.16344 0 16 0Z" fill="#8B5CF6"/>
-              <path d="M8 8H24V24H8V8Z" fill="white"/>
-              <path d="M10 10H22V22H10V10Z" fill="#8B5CF6"/>
-              <path d="M12 12H20V20H12V12Z" fill="white"/>
+              <path d="M16 2C23.732 2 30 8.268 30 16C30 23.732 23.732 30 16 30C8.268 30 2 23.732 2 16C2 8.268 8.268 2 16 2Z" fill="#7C3AED"/>
+              <path d="M12 8C13.1046 8 14 8.89543 14 10C14 11.1046 13.1046 12 12 12C10.8954 12 10 11.1046 10 10C10 8.89543 10.8954 8 12 8Z" fill="white"/>
+              <path d="M20 8C21.1046 8 22 8.89543 22 10C22 11.1046 21.1046 12 20 12C18.8954 12 18 11.1046 18 10C18 8.89543 18.8954 8 20 8Z" fill="white"/>
+              <path d="M8 14H24C24.5523 14 25 14.4477 25 15V21C25 21.5523 24.5523 22 24 22H8C7.44772 22 7 21.5523 7 21V15C7 14.4477 7.44772 14 8 14Z" fill="white"/>
+              <path d="M10 16H22V18H10V16Z" fill="#7C3AED"/>
+              <path d="M10 19H18V20H10V19Z" fill="#7C3AED"/>
             </svg>
             <span className="logo-text">beefree <span className="sdk-text">SDK</span></span>
           </div>

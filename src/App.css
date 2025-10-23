@@ -1,10 +1,24 @@
+/* Beefree Brand Colors from Screenshot */
+:root {
+  --beefree-purple-primary: #7C3AED;
+  --beefree-purple-dark: #5B21B6;
+  --beefree-purple-gradient-start: #8B5CF6;
+  --beefree-purple-gradient-end: #3B0764;
+  --beefree-green-accent: #10B981;
+  --beefree-green-light: #34D399;
+  --beefree-white: #FFFFFF;
+  --beefree-gray-light: #F8FAFC;
+  --beefree-text-dark: #1F2937;
+  --beefree-text-muted: #6B7280;
+}
+
 .App {
   width: 100vw;
   height: 100vh;
   display: flex;
   flex-direction: column;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  background-color: #fafafa;
+  background: linear-gradient(135deg, var(--beefree-purple-gradient-start) 0%, var(--beefree-purple-gradient-end) 100%);
 }
 
 /* App Header with Beefree Branding */
@@ -13,9 +27,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  background-color: white;
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  background-color: var(--beefree-white);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .header-left {
@@ -33,18 +47,18 @@
 .logo-text {
   font-size: 20px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--beefree-text-dark);
 }
 
 .sdk-text {
-  color: #8B5CF6;
+  color: var(--beefree-purple-primary);
   font-weight: 400;
 }
 
 .page-title {
   font-size: 24px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--beefree-text-dark);
   margin: 0;
 }
 
@@ -56,9 +70,9 @@
 
 .import-html-button {
   padding: 8px 16px;
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background-color: var(--beefree-purple-primary);
+  color: var(--beefree-white);
+  border: 1px solid var(--beefree-purple-primary);
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
@@ -67,12 +81,12 @@
 }
 
 .import-html-button:hover {
-  background-color: #e5e7eb;
-  color: #1f2937;
+  background-color: var(--beefree-purple-dark);
+  border-color: var(--beefree-purple-dark);
 }
 
 .documentation-link {
-  color: #6b7280;
+  color: var(--beefree-text-muted);
   text-decoration: none;
   font-weight: 500;
   font-size: 14px;
@@ -80,13 +94,13 @@
 }
 
 .documentation-link:hover {
-  color: #8B5CF6;
+  color: var(--beefree-purple-primary);
 }
 
 /* Template Top Bar Styles */
 .template-top-bar {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
+  background-color: var(--beefree-white);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding: 12px 20px;
   flex-shrink: 0;
 }
