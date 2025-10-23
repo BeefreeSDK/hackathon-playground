@@ -1,0 +1,115 @@
+{
+  "page": {
+    "body": {
+      "container": {
+        "style": {
+          "background-color": "#fff"
+        }
+      },
+      "content": {
+        "computedStyle": {
+          "linkColor": "#8a3b8f",
+          "messageBackgroundColor": "transparent",
+          "messageWidth": "650px"
+        },
+        "style": {
+          "color": "#000000",
+          "font-family": "Lato, Tahoma, Verdana, Segoe, sans-serif"
+        }
+      },
+      "type": "mailup-bee-page-properties"
+    },
+    "rows": [
+      {
+        "container": {
+          "style": {
+            "background-color": "transparent"
+          }
+        },
+        "content": {
+          "style": {
+            "background-color": "transparent",
+            "color": "#000000",
+            "width": "500px"
+          }
+        },
+        "columns": [
+          {
+            "style": {
+              "background-color": "transparent",
+              "padding-bottom": "5px",
+              "padding-top": "5px"
+            },
+            "modules": [
+              {
+                "type": "mailup-bee-newsletter-modules-heading",
+                "descriptor": {
+                  "heading": {
+                    "title": "h1",
+                    "text": "Welcome to Beefree SDK",
+                    "style": {
+                      "color": "#555555",
+                      "font-size": "32px",
+                      "font-family": "inherit",
+                      "line-height": "120%",
+                      "text-align": "center",
+                      "font-weight": "700"
+                    }
+                  },
+                  "style": {
+                    "width": "100%",
+                    "text-align": "center"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "container": {
+          "style": {
+            "background-color": "transparent"
+          }
+        },
+        "content": {
+          "style": {
+            "background-color": "transparent",
+            "color": "#000000",
+            "width": "500px"
+          }
+        },
+        "columns": [
+          {
+            "style": {
+              "background-color": "transparent",
+              "padding-bottom": "20px",
+              "padding-top": "20px"
+            },
+            "modules": [
+              {
+                "type": "mailup-bee-newsletter-modules-paragraph",
+                "descriptor": {
+                  "text": {
+                    "text": "Select a template from the top bar to get started, or begin designing from scratch. You can export your designs as HTML, plain text, PDF, or thumbnail images.",
+                    "style": {
+                      "color": "#666666",
+                      "font-size": "16px",
+                      "font-family": "inherit",
+                      "line-height": "150%",
+                      "text-align": "center"
+                    }
+                  },
+                  "style": {
+                    "width": "100%",
+                    "text-align": "center"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

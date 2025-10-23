@@ -1,0 +1,58 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[functions]
+  directory = "netlify/functions"
+
+# Redirect API calls to Netlify Functions
+[[redirects]]
+  from = "/api/proxy/bee-auth"
+  to = "/.netlify/functions/bee-auth"
+  status = 200
+
+[[redirects]]
+  from = "/api/templates/*"
+  to = "/.netlify/functions/templates/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/templates"
+  to = "/.netlify/functions/templates"
+  status = 200
+
+[[redirects]]
+  from = "/api/apply-brand-styles"
+  to = "/.netlify/functions/apply-brand-styles"
+  status = 200
+
+[[redirects]]
+  from = "/v1/message/html"
+  to = "/.netlify/functions/export-html"
+  status = 200
+
+[[redirects]]
+  from = "/v1/message/plain-text"
+  to = "/.netlify/functions/export-plain-text"
+  status = 200
+
+[[redirects]]
+  from = "/v1/message/pdf"
+  to = "/.netlify/functions/export-pdf"
+  status = 200
+
+[[redirects]]
+  from = "/v1/message/image"
+  to = "/.netlify/functions/export-image"
+  status = 200
+
+[[redirects]]
+  from = "/v1/html-importer"
+  to = "/.netlify/functions/html-importer"
+  status = 200
+
+# SPA fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
