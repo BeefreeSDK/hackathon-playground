@@ -4,7 +4,13 @@ import BeefreeEditor from './components/BeefreeEditor';
 import BeeConfigSidebar from './components/BeeConfigSidebar';
 import ExportDropdown from './components/ExportDropdown';
 import HtmlImportModal from './components/HtmlImportModal';
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
+
+type ExportResult = {
+  kind: 'html' | 'text' | 'image' | 'pdf';
+  content: string;
+  downloadUrl?: string;
+}
 
 function App() {
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
@@ -37,8 +43,6 @@ function App() {
   };
 
   const handleApplyBrandStyles = async (brandStyles: any) => {
-    // This function will be called by the top bar, but the actual work
-    // is done by the BeefreeEditor component via the exposed function
     if ((window as any).applyBrandStyles) {
       await (window as any).applyBrandStyles(brandStyles);
     } else {
@@ -48,7 +52,6 @@ function App() {
 
   const handleConfigChange = async (newConfig: any) => {
     setBeeConfig(newConfig);
-    // Restart the editor with new config
     if ((window as any).restartEditor) {
       (window as any).restartEditor();
     }
@@ -159,30 +162,50 @@ function App() {
   };
 
   const handleGetImage = async () => {
-    if (!lastHtmlRef.current) {
-      setError('Convert template to HTML first');
-      return;
-    }
-
     setLoadingState('image', true);
     setError('');
 
     try {
+      // First ensure we have HTML
+      let html = lastHtmlRef.current;
+      if (!html) {
+        // Generate HTML first
+        const htmlResponse = await fetch('/v1/message/html', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentJson),
+        });
+
+        if (!htmlResponse.ok) {
+          throw new Error('Failed to generate HTML for image');
+        }
+
+        html = await htmlResponse.text();
+        lastHtmlRef.current = html;
+      }
+
+      // Now generate the image with the exact parameters from the docs
       const response = await fetch('/v1/message/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          html: lastHtmlRef.current,
           file_type: 'png',
-          size: '1000'
+          size: '1000',
+          html: html
         }),
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Image export error response:', errorText);
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
+      // Get the binary image data
       const blob = await response.blob();
+      console.log('Image blob received:', blob.type, blob.size, 'bytes');
+      
+      // Create object URL for display
       const url = URL.createObjectURL(blob);
       setImageUrl(url);
     } catch (err: any) {
@@ -192,7 +215,6 @@ function App() {
       setLoadingState('image', false);
     }
   };
-
 
   const downloadText = (text: string, filename: string) => {
     const blob = new Blob([text], { type: 'text/plain' });
@@ -235,11 +257,9 @@ function App() {
       const importedData = await response.json();
       console.log('HTML imported successfully:', importedData);
 
-      // Load the imported JSON into the editor
       if (importedData && typeof importedData === 'object') {
         setCurrentJson(importedData);
         
-        // Load into editor via the exposed function
         if ((window as any).loadTemplate) {
           (window as any).loadTemplate(importedData);
         }
@@ -251,46 +271,41 @@ function App() {
   };
 
   return (
-    <div className="App">
-      {/* Header with Beefree branding */}
-      <header className="app-header">
-        <div className="header-left">
-          <div className="beefree-logo">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M16 2C23.732 2 30 8.268 30 16C30 23.732 23.732 30 16 30C8.268 30 2 23.732 2 16C2 8.268 8.268 2 16 2Z" fill="#7C3AED"/>
-              <path d="M12 8C13.1046 8 14 8.89543 14 10C14 11.1046 13.1046 12 12 12C10.8954 12 10 11.1046 10 10C10 8.89543 10.8954 8 12 8Z" fill="white"/>
-              <path d="M20 8C21.1046 8 22 8.89543 22 10C22 11.1046 21.1046 12 20 12C18.8954 12 18 11.1046 18 10C18 8.89543 18.8954 8 20 8Z" fill="white"/>
-              <path d="M8 14H24C24.5523 14 25 14.4477 25 15V21C25 21.5523 24.5523 22 24 22H8C7.44772 22 7 21.5523 7 21V15C7 14.4477 7.44772 14 8 14Z" fill="white"/>
-              <path d="M10 16H22V18H10V16Z" fill="#7C3AED"/>
-              <path d="M10 19H18V20H10V19Z" fill="#7C3AED"/>
-            </svg>
-            <span className="logo-text">beefree <span className="sdk-text">SDK</span></span>
+    <div className="playground-container">
+      {/* Header */}
+      <header className="playground-header">
+        <div className="header-content">
+          <div className="header-left">
+            <img 
+              src="https://d15k2d11r6t6rl.cloudfront.net/pub/bfra/bs0kfqbg/tqu/rwx/rj4/Logo%20version%3DColored%2C%20Name%3DOn.svg" 
+              alt="Beefree SDK" 
+              className="logo"
+            />
+            <h1 className="playground-title">SDK Playground</h1>
           </div>
-          <h1 className="page-title">SDK Playground</h1>
-        </div>
-        
-        <div className="header-right">
-          <button 
-            onClick={() => setIsImportModalOpen(true)}
-            className="import-html-button"
-          >
-            Import HTML
-          </button>
-          <ExportDropdown 
-            onExportHtml={handleGetHtml}
-            onExportPlainText={handleGetPlainText}
-            onExportImage={handleGetImage}
-            onExportPdf={handleGetPdf}
-            loading={loading}
-          />
-          <a 
-            href="https://docs.beefree.io/beefree-sdk" 
-            target="_blank" 
-            rel="noreferrer"
-            className="documentation-link"
-          >
-            Documentation
-          </a>
+          <div className="header-right">
+            <button 
+              onClick={() => setIsImportModalOpen(true)}
+              className="btn-secondary"
+            >
+              Import HTML
+            </button>
+            <ExportDropdown 
+              onExportHtml={handleGetHtml}
+              onExportPlainText={handleGetPlainText}
+              onExportImage={handleGetImage}
+              onExportPdf={handleGetPdf}
+              loading={loading}
+            />
+            <a 
+              href="https://docs.beefree.io/beefree-sdk" 
+              target="_blank" 
+              rel="noreferrer"
+              className="btn-secondary"
+            >
+              Documentation
+            </a>
+          </div>
         </div>
       </header>
 
@@ -337,7 +352,7 @@ function App() {
           {htmlResult && (
             <div className="result-section">
               <div className="result-header">
-                <span>Copy</span>
+                <span>HTML</span>
                 <button onClick={() => downloadText(htmlResult, 'template.html')}>Download HTML</button>
               </div>
               <textarea 
@@ -379,7 +394,7 @@ function App() {
           )}
 
           {imageUrl && (
-            <div className="result-section">
+            <div className="result-section image-section">
               <div className="result-header">
                 <span>Thumbnail Image</span>
                 <button onClick={downloadImage}>Download</button>

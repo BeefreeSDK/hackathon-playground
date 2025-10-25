@@ -41,8 +41,8 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
     setError('');
     
     try {
-      // Fetch templates from the catalog with a reasonable limit
-      const response = await axios.get('/api/templates?limit=50');
+      // Fetch first 10 templates from the catalog as requested
+      const response = await axios.get('/api/templates?limit=10');
       
       console.log('Templates API response:', response.data);
       
@@ -66,19 +66,22 @@ const TemplateTopBar: React.FC<TemplateTopBarProps> = ({
       console.log('Found templates array:', templatesArray.length, 'templates');
       
       // Process templates to ensure they have the structure we need
+      // Limit to first 10 templates
       const processedTemplates = templatesArray
         .filter(template => template && (template.id || template.slug)) // Only include valid templates
+        .slice(0, 10) // Limit to 10 templates
         .map((template, index) => ({
           id: template.id || template.slug || `template-${index}`,
           name: template.title || template.display_name || template.name || template.id || 'Untitled',
           display_name: template.title || template.display_name || template.name || template.id || 'Untitled',
+          title: template.title,
           json_data: template.json_data,
           data: template
         }));
       
       setTemplates(processedTemplates);
-      console.log('Processed templates:', processedTemplates.length);
-      console.log('First few templates:', processedTemplates.slice(0, 3));
+      console.log('Processed templates (first 10):', processedTemplates.length);
+      console.log('Template names:', processedTemplates.map(t => t.name));
     } catch (err) {
       setError('Failed to fetch templates');
       console.error('Error fetching templates:', err);

@@ -453,32 +453,62 @@ app.post('/v1/message/pdf', async (req, res) => {
   }
 });
 
+// Image (returns binary)
 app.post('/v1/message/image', async (req, res) => {
+  if (!CS_API_TOKEN) {
+    return res.status(500).json({ error: 'CS API Token not configured' });
+  }
+  
   try {
-    if (!CS_API_TOKEN) {
-      return res.status(500).json({ error: 'CS API Token not configured' });
-    }
+    console.log('Image export request received:', {
+      hasHtml: !!req.body.html,
+      htmlLength: req.body.html?.length,
+      file_type: req.body.file_type,
+      size: req.body.size
+    });
 
-    const cacheKey = getCacheKey('image', req.body);
-    const cached = getFromCache(cacheKey);
-    if (cached) {
-      return res.type('image/png').send(cached);
-    }
-
-    const response = await axios.post('https://api.getbee.io/v1/message/image', req.body, {
+    const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    
+    const response = await axios.post('https://api.getbee.io/v1/message/image', payload, {
       headers: {
-        'Authorization': CS_API_TOKEN.startsWith('Bearer ') ? CS_API_TOKEN : `Bearer ${CS_API_TOKEN}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': CS_API_TOKEN.startsWith('Bearer ') ? CS_API_TOKEN : `Bearer ${CS_API_TOKEN}`
       },
       responseType: 'arraybuffer'
     });
 
-    setCache(cacheKey, response.data);
-    res.type('image/png').send(response.data);
+    console.log('Image export successful:', {
+      status: response.status,
+      contentType: response.headers['content-type'],
+      dataLength: response.data.length
+    });
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Disposition', 'inline');
+    res.status(200).send(Buffer.from(response.data));
   } catch (error) {
-    console.error('Image export error:', error.response?.data || error.message);
+    console.error('Image export error:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText
+    });
+    
+    // Try to extract error details
+    let errorMessage = 'Error exporting image';
+    if (error.response?.data) {
+      try {
+        // If error response is also arraybuffer, convert it
+        const errorText = Buffer.from(error.response.data).toString('utf8');
+        errorMessage = errorText;
+      } catch (e) {
+        errorMessage = error.message || 'Unknown error';
+      }
+    }
+    
     res.status(error.response?.status || 500).json({ 
-      error: 'Failed to export image: ' + (error.response?.data?.message || error.message) 
+      error: 'Failed to export image',
+      message: errorMessage,
+      details: error.message
     });
   }
 });

@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-
-// Import BeefreeSDK directly
 import BeefreeSDK from '@beefree.io/sdk';
 
 interface Template {
@@ -25,6 +23,7 @@ interface BeefreeEditorProps {
   onJsonChange?: (json: any) => void;
   beeConfig?: any;
   onConfigChange?: (config: any) => void;
+  onReady?: () => void;
 }
 
 const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
@@ -33,7 +32,8 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
   onApplyBrandStyles,
   onJsonChange,
   beeConfig,
-  onConfigChange
+  onConfigChange,
+  onReady
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const sdkRef = useRef<any>(null);
@@ -45,14 +45,10 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
   // Normalize various API shapes to the JSON the SDK expects
   const normalizeTemplateJson = (input: any): any => {
     if (!input) return input;
-    // Pride Month category templates have json_data property
     if (input.json_data) return input.json_data;
-    // Brand styles API returns { html, json }
     if (input.json) return input.json;
-    // Template catalog may return { template: {...} }
     if (input.template?.page) return input.template;
     if (input.template) return input.template;
-    // Sometimes directly the page/rows structure
     if (input.page || input.rows) return input;
     return input;
   };
@@ -64,50 +60,24 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
     }
 
     try {
-      // Get current JSON from the editor
       const editorResponse = await sdkRef.current.save();
-      console.log('Editor save response:', editorResponse);
-      console.log('Editor save response keys:', Object.keys(editorResponse));
-      
-      // The SDK might return different formats, let's handle all cases
       let templateJson;
       
       if (editorResponse.pageJson) {
         if (typeof editorResponse.pageJson === 'string') {
-          // Parse JSON string
           try {
             templateJson = JSON.parse(editorResponse.pageJson);
-            console.log('Parsed pageJson string to object');
           } catch (parseError) {
-            console.error('Failed to parse pageJson string:', parseError);
             throw new Error('Invalid JSON format from editor');
           }
         } else {
-          // Already an object
           templateJson = editorResponse.pageJson;
-          console.log('Using pageJson object directly');
         }
       } else if (editorResponse.page) {
-        // Direct page structure
         templateJson = editorResponse;
-        console.log('Using editorResponse with page property');
       } else {
-        // Check if the response itself is the template
         templateJson = editorResponse;
-        console.log('Using editorResponse as template');
       }
-      
-      console.log('Final template JSON size:', JSON.stringify(templateJson).length);
-      console.log('Final template structure:', Object.keys(templateJson));
-      console.log('Has page property:', !!templateJson.page);
-      
-      // If we still don't have a page property, this might be the issue
-      if (!templateJson.page) {
-        console.error('Template is missing page property! Template keys:', Object.keys(templateJson));
-        console.error('First level structure:', templateJson);
-      }
-      
-      console.log('Sending to Brand Style API...');
       
       // Send to Brand Style API
       const response = await axios.post('/api/apply-brand-styles', {
@@ -115,13 +85,8 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         template: templateJson
       });
       
-      console.log('Brand styles applied, reloading editor with styled content...');
-      
-      // Load the styled JSON back into the editor
       const styledJson = normalizeTemplateJson(response.data);
       await sdkRef.current.load(styledJson);
-      
-      // Notify parent component
       onTemplateLoad(styledJson);
       
     } catch (error) {
@@ -139,14 +104,11 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
   // Expose functions to parent
   useEffect(() => {
     if (onApplyBrandStyles) {
-      // This is a bit of a hack, but we need to expose the function
       (window as any).applyBrandStyles = applyBrandStyles;
     }
     
-    // Expose config restart function
     (window as any).restartEditor = restartWithNewConfig;
     
-    // Expose template loading function
     (window as any).loadTemplate = async (templateData: any) => {
       if (sdkRef.current && isInitialized) {
         try {
@@ -174,6 +136,8 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         setLoading(true);
         setError('');
 
+        console.log('🚀 Initializing Beefree SDK...');
+        
         // Get authentication token
         const authResponse = await axios.post('/api/proxy/bee-auth', {
           uid: 'demo-user'
@@ -182,12 +146,12 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
         if (disposed) return;
 
         const token = authResponse.data;
+        console.log('✅ Authentication successful');
 
         // Initialize Beefree SDK
         const sdk = new BeefreeSDK({ ...token, v2: true });
         sdkRef.current = sdk;
 
-        // Configure the editor with onChange tracking like playground
         const defaultBeeConfig = {
           container: 'beefree-react-demo',
           language: 'en-US',
@@ -235,16 +199,13 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
 
         const finalBeeConfig = {
           ...(beeConfig || defaultBeeConfig),
-          // Always override these callbacks
           onChange: (json: any) => {
-            console.log('Template changed:', json);
             if (onJsonChange) {
               onJsonChange(json);
             }
             onTemplateLoad(json);
           },
           onSave: (pageJson: string, pageHtml: string, ampHtml: string | null, templateVersion: number, language: string | null) => {
-            console.log('Saved!', { pageJson, pageHtml, ampHtml, templateVersion, language });
             const parsedJson = JSON.parse(pageJson);
             if (onJsonChange) {
               onJsonChange(parsedJson);
@@ -252,42 +213,43 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
             onTemplateLoad(parsedJson);
           },
           onError: (error: unknown) => {
-            console.error('Error:', error);
+            console.error('⚠️ Beefree SDK Error:', error);
             setError('Editor error: ' + (error as Error).message);
           }
         };
 
-        // Notify parent of the current config
         if (onConfigChange && !beeConfig) {
           onConfigChange(defaultBeeConfig);
         }
 
-        // Load initial template if available, otherwise start with empty
+        // Load initial template if available
         let initialJson;
         try {
           const templateResponse = await fetch('/template.json');
           if (templateResponse.ok) {
             initialJson = await templateResponse.json();
-            console.log('Loaded initial template from /template.json');
+            console.log('📄 Loaded initial template from /template.json');
           }
         } catch (err) {
           console.log('No initial template found, starting empty');
         }
 
-        // Start the editor
+        console.log('▶️ Starting Beefree SDK...');
         await sdk.start(finalBeeConfig, initialJson, '', { shared: false });
 
         if (disposed) return;
 
         setIsInitialized(true);
         setLoading(false);
-
-        // Callbacks already provided via beeConfig (onSave/onError)
+        console.log('✨ Beefree SDK initialized successfully!');
+        
+        if (onReady) {
+          onReady();
+        }
 
       } catch (err: any) {
         if (disposed) return;
-        console.error('Failed to initialize Beefree SDK:', err);
-        // Do not surface blocking error UI; keep editor area clean per request
+        console.error('💥 Failed to initialize Beefree SDK:', err);
         setError('');
         setLoading(false);
       }
@@ -320,22 +282,18 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
 
         let templateData;
 
-        // Check if template has json_data directly (from Pride Month category)
         if (selectedTemplate.json_data) {
           templateData = selectedTemplate.json_data;
         } else if (selectedTemplate.data?.json_data) {
           templateData = selectedTemplate.data.json_data;
         } else if (selectedTemplate.data) {
-          // If the template has brand styles applied or other data, use that
           templateData = selectedTemplate.data;
         } else {
-          // Fetch the template data from the API if not already loaded
           try {
             const response = await axios.get(`/api/templates/${selectedTemplate.id}`);
             templateData = response.data?.json_data || response.data;
           } catch (err) {
             console.error('Failed to fetch template data:', err);
-            // Fallback to a basic template structure
             templateData = {
               page: {
                 body: {
@@ -410,10 +368,7 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
           }
         }
 
-        // Load the template into the editor
         await sdkRef.current.load(normalizeTemplateJson(templateData));
-        
-        // Notify parent component
         onTemplateLoad(normalizeTemplateJson(templateData));
         
         setLoading(false);
@@ -428,8 +383,6 @@ const BeefreeEditor: React.FC<BeefreeEditorProps> = ({
       loadTemplate();
     }
   }, [selectedTemplate, isInitialized, onTemplateLoad]);
-
-
 
   return (
     <div className="editor-container">
